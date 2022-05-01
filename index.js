@@ -37,6 +37,12 @@ async function run() {
       const result = await productsCollection.findOne(query);
       res.send(result)
     })
+    // added new post
+    app.post('/products',async(req , res) => {
+      const data = req.body;
+      const result = await productsCollection.insertOne(data);
+      res.send(result);
+    })
   } finally {
     // await client.close();
   }
