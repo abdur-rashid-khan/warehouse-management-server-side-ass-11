@@ -9,6 +9,24 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
+// auth
+// function verifyJWT(req , res , next){
+//   const authHeader = req.headers.authorization;
+//   if(!authHeader){
+//     return res.status(401).send({message:'unauthorized'});
+//   }
+//   const token = authHeader.split(' ')[1];
+//   jwt.verify(token,process.env.ACCESS_TOKEN,(error , decode)=>{
+//     if(error){
+//       return res.status(403).send({message:'Forbidden access'})
+//     }
+//     req.decode = decode;
+//     next();
+//   })
+  
+// }
+
 app.get('/', (req, res) => {
   res.send('DB connected')
 })
@@ -24,6 +42,7 @@ async function run() {
   try {
     await client.connect();
     const productsCollection = client.db('shopin').collection('products');
+    const deliveryCollection = client.db('shopin').collection('delivery');
     app.get('/products', async(req , res) => {
       const query = {};
       const cursor =  productsCollection.find(query);
@@ -62,6 +81,30 @@ async function run() {
       const result = await productsCollection.updateOne(query,update,options);
       res.send(result);
     });
+    // for order
+    app.post('/delivery', async(req,res)=>{
+      const delivery = req.body;
+      const cursor = await deliveryCollection.insertOne(delivery);
+      res.send(cursor);
+    });
+    app.get('/delivery', async(req , res)=>{
+      const email = req.query.email;
+      // const authHeader = req.headers.authorization;
+      const query = {email};
+      console.log(query);
+      const cursor = deliveryCollection.find(query);
+      const delivery = await cursor.toArray();
+      res.send(delivery)
+    })
+    app.post('/login',(req , res) =>{
+      const user = req.body;
+      const accessToken = jwt.sign(user,process.env.ACCESS_TOKEN,{
+        expiresIn:'1d'
+      });
+      res.send(accessToken);
+    });
+    // 
+    
   } finally {
     // await client.close();
   }
@@ -71,3 +114,4 @@ run().catch(console.dir);
 app.listen(port, () => {
   console.log(`localhost ${port}`) 
 })
+
